@@ -1,3 +1,7 @@
+output "hdinsight_hbase_clusters_id" {
+  description = "Map of id values across all hdinsight_hbase_clusters, keyed the same as var.hdinsight_hbase_clusters"
+  value       = { for k, v in azurerm_hdinsight_hbase_cluster.hdinsight_hbase_clusters : k => v.id }
+}
 output "hdinsight_hbase_clusters_cluster_version" {
   description = "Map of cluster_version values across all hdinsight_hbase_clusters, keyed the same as var.hdinsight_hbase_clusters"
   value       = { for k, v in azurerm_hdinsight_hbase_cluster.hdinsight_hbase_clusters : k => v.cluster_version }
