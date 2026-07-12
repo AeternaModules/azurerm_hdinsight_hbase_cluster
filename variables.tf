@@ -272,7 +272,7 @@ EOT
   validation {
     condition = alltrue([
       for k, v in var.hdinsight_hbase_clusters : (
-        length(v.roles.worker_node.autoscale.recurrence.schedule) >= 1
+        v.roles.worker_node.autoscale == null || (v.roles.worker_node.autoscale.recurrence == null || (length(v.roles.worker_node.autoscale.recurrence.schedule) >= 1))
       )
     ])
     error_message = "Each schedule list must contain at least 1 items"
