@@ -7,6 +7,7 @@ Required:
     - name
     - resource_group_name
     - tier
+    - tls_min_version
     - component_version (block):
         - hbase (required)
     - gateway (block):
@@ -56,7 +57,6 @@ Required:
             - vm_size (required)
 Optional:
     - tags
-    - tls_min_version
     - compute_isolation (block):
         - compute_isolation_enabled (optional)
         - host_sku (optional)
@@ -109,14 +109,14 @@ Optional:
         - msi_resource_id (required)
     - storage_account (block):
         - is_default (required)
+        - storage_account_id (optional)
         - storage_account_key (required)
-        - storage_container_id (required)
-        - storage_resource_id (optional)
+        - storage_container_url (required)
     - storage_account_gen2 (block):
         - filesystem_id (required)
         - is_default (required)
-        - managed_identity_resource_id (required)
-        - storage_resource_id (required)
+        - storage_account_id (required)
+        - user_assigned_identity_id (required)
 EOT
 
   type = map(object({
@@ -125,8 +125,8 @@ EOT
     name                = string
     resource_group_name = string
     tier                = string
+    tls_min_version     = string
     tags                = optional(map(string))
-    tls_min_version     = optional(string)
     component_version = object({
       hbase = string
     })
@@ -249,16 +249,16 @@ EOT
       msi_resource_id         = string
     }))
     storage_account = optional(list(object({
-      is_default           = bool
-      storage_account_key  = string
-      storage_container_id = string
-      storage_resource_id  = optional(string)
+      is_default            = bool
+      storage_account_id    = optional(string)
+      storage_account_key   = string
+      storage_container_url = string
     })))
     storage_account_gen2 = optional(object({
-      filesystem_id                = string
-      is_default                   = bool
-      managed_identity_resource_id = string
-      storage_resource_id          = string
+      filesystem_id             = string
+      is_default                = bool
+      storage_account_id        = string
+      user_assigned_identity_id = string
     }))
   }))
   validation {
@@ -296,10 +296,10 @@ EOT
   validation {
     condition = alltrue([
       for k, v in var.hdinsight_hbase_clusters : (
-        v.tls_min_version == null || (contains(["1.0", "1.1", "1.2"], v.tls_min_version))
+        contains(["1.0", "1.1", "1.2", "1.3"], v.tls_min_version)
       )
     ])
-    error_message = "must be one of: 1.0, 1.1, 1.2"
+    error_message = "must be one of: 1.0, 1.1, 1.2, 1.3"
   }
   validation {
     condition = alltrue([
@@ -352,14 +352,6 @@ EOT
   validation {
     condition = alltrue([
       for k, v in var.hdinsight_hbase_clusters : (
-        v.storage_account == null || alltrue([for item in v.storage_account : (length(item.storage_container_id) > 0)])
-      )
-    ])
-    error_message = "must not be empty"
-  }
-  validation {
-    condition = alltrue([
-      for k, v in var.hdinsight_hbase_clusters : (
         v.storage_account_gen2 == null || (length(v.storage_account_gen2.filesystem_id) > 0)
       )
     ])
@@ -405,6 +397,6 @@ EOT
     ])
     error_message = "must not be empty"
   }
-  # Note: 32 additional provider-side validators are enforced at apply time but not mirrored as validation{} blocks here (bespoke or non-mechanically-translatable).
+  # Note: 34 additional provider-side validators are enforced at apply time but not mirrored as validation{} blocks here (bespoke or non-mechanically-translatable).
 }
 
